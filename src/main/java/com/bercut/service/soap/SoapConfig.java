@@ -1,7 +1,5 @@
 package com.bercut.service.soap;
 
-import org.apache.catalina.core.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
@@ -32,7 +30,6 @@ public class SoapConfig {
             e.printStackTrace();
         }
         client.setMessageFactory(messageFactory);
-//        client.setDefaultUri("http://10.77.240.227:6111/spec/dsi/ServiceProfileManagement/ServiceProfilePortType");
         client.setMarshaller(marshaller);
         client.setUnmarshaller(marshaller);
 

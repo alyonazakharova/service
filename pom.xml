@@ -11,6 +11,7 @@
     <groupId>com.bercut</groupId>
     <artifactId>service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <packaging>war</packaging>
     <name>service</name>
     <description>Demo project for Spring Boot</description>
     <properties>
@@ -48,50 +49,45 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>ru.tele2.autotests</groupId>
-            <artifactId>autotests-core</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
-        </dependency>
-
         <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.12.0</version>
-        </dependency>
-
+<!--        <dependency>-->
+<!--            <groupId>org.apache.commons</groupId>-->
+<!--            <artifactId>commons-lang3</artifactId>-->
+<!--            <version>3.12.0</version>-->
+<!--        </dependency>-->
 
     </dependencies>
 
     <build>
+<!--        <finalName>service</finalName>-->
+
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <plugin>
-                <groupId>org.jvnet.jaxb2.maven2</groupId>
-                <artifactId>maven-jaxb2-plugin</artifactId>
-                <version>0.14.0</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <schemaLanguage>WSDL</schemaLanguage>
-                    <generatePackage>com.bercut.service.wsdl</generatePackage>
-                    <schemas>
-                        <schema>
-                            <url>http://10.77.240.227:6111/spec/dsi/ServiceProfileManagement/ServiceProfilePortType?wsdl</url>
-                        </schema>
-                    </schemas>
-                </configuration>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.jvnet.jaxb2.maven2</groupId>-->
+<!--                <artifactId>maven-jaxb2-plugin</artifactId>-->
+<!--                <version>0.14.0</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <goals>-->
+<!--                            <goal>generate</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--                <configuration>-->
+<!--                    <schemaLanguage>WSDL</schemaLanguage>-->
+<!--                    <generatePackage>com.bercut.service.wsdl</generatePackage>-->
+<!--                    <schemas>-->
+<!--                        <schema>-->
+<!--                            <url>http://10.77.240.227:6111/spec/dsi/ServiceProfileManagement/ServiceProfilePortType?wsdl</url>-->
+<!--                        </schema>-->
+<!--                    </schemas>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
 
         </plugins>
     </build>

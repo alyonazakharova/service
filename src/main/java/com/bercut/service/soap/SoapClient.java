@@ -2,7 +2,6 @@ package com.bercut.service.soap;
 
 import com.bercut.service.findservices.ServiceContent;
 import com.bercut.service.wsdl.*;
-import org.apache.catalina.core.ApplicationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +9,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.ws.client.WebServiceFaultException;
+import org.springframework.ws.client.WebServiceTransportException;
 import org.springframework.ws.client.core.support.WebServiceGatewaySupport;
 
 import javax.xml.bind.JAXBElement;
@@ -25,6 +25,7 @@ public class SoapClient extends WebServiceGatewaySupport {
                                                    String trplName, Long servId) throws WebServiceFaultException {
         String uri = environment.getProperty(testContur);
         if (uri == null) {
+            log.error("Invalid test environment specified");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid test environment specified");
         }
 
@@ -42,16 +43,21 @@ public class SoapClient extends WebServiceGatewaySupport {
         concreteServiceCriteria.setServiceContent(serviceContent);
         request.setConcreteServiceCriteria(concreteServiceCriteria);
 
-        //WebServiceTransportException - Service not found
-        JAXBElement<FindServicesResponseParams> response = (JAXBElement<FindServicesResponseParams>) getWebServiceTemplate()
-                    .marshalSendAndReceive(uri, request);
-        return response.getValue();
+        try {
+            JAXBElement<FindServicesResponseParams> response = (JAXBElement<FindServicesResponseParams>) getWebServiceTemplate().marshalSendAndReceive(uri, request);
+            return response.getValue();
+        } catch (WebServiceTransportException e) {
+            log.error(e.getMessage());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }
+
     }
 
     public ReadServiceResponseParams readService(String testContur, long branchId,
                                                  String serviceName, String xPath) throws WebServiceFaultException {
         String uri = environment.getProperty(testContur);
         if (uri == null) {
+            log.error("Invalid test environment specified");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid test environment specified");
         }
 
@@ -65,8 +71,12 @@ public class SoapClient extends WebServiceGatewaySupport {
         parameterContext.setXpath(xPath);
         request.setParameterContext(parameterContext);
 
-        JAXBElement<ReadServiceResponseParams> response = (JAXBElement<ReadServiceResponseParams>) getWebServiceTemplate()
-                    .marshalSendAndReceive(uri, request);
-        return response.getValue();
+        try {
+            JAXBElement<ReadServiceResponseParams> response = (JAXBElement<ReadServiceResponseParams>) getWebServiceTemplate().marshalSendAndReceive(uri, request);
+            return response.getValue();
+        } catch (WebServiceTransportException e) {
+            log.error(e.getMessage());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }
     }
 }

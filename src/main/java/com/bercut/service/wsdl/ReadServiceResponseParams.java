@@ -8,12 +8,9 @@
 
 package com.bercut.service.wsdl;
 
+import javax.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
-import javax.xml.bind.annotation.*;
-
-import com.bercut.service.readservice.ServiceContentReadService;
-import org.w3c.dom.Element;
 
 
 @XmlAccessorType(XmlAccessType.FIELD)
