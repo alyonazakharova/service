@@ -16,7 +16,7 @@
 //        Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
 //        // this package must match the package in the <generatePackage> specified in pom.xml
 //        marshaller.setContextPath("com.bercut.service.wsdl");
-////        marshaller.setContextPath("com.bercut.service.rates_management");
+////        marshaller.setContextPath("com.bercut.service.wsdl.rates_management");
 //        return marshaller;
 //    }
 //

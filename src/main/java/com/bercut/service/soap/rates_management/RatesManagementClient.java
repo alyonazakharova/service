@@ -1,6 +1,6 @@
 package com.bercut.service.soap.rates_management;
 
-import com.bercut.service.rates_management.GetRateProfileRequest;
+import com.bercut.service.wsdl.rates_management.GetRateProfileRequest;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;

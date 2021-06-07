@@ -3,7 +3,6 @@ package com.bercut.service.soap.service_profile;
 import com.bercut.service.soap.SoapClientInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.ws.client.support.interceptor.ClientInterceptor;
 import org.springframework.ws.soap.saaj.SaajSoapMessageFactory;
@@ -16,12 +15,11 @@ public class ServiceProfileConfig {
     @Bean
     public Jaxb2Marshaller serviceProfileMarshaller() {
         Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
-        marshaller.setContextPath("com.bercut.service.wsdl");
+        marshaller.setContextPath("com.bercut.service.wsdl.service_profile");
         return marshaller;
     }
 
     @Bean
-    @Primary
     public ServiceProfileClient serviceProfileClient(Jaxb2Marshaller serviceProfileMarshaller) {
         ServiceProfileClient client = new ServiceProfileClient();
 

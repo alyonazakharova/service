@@ -1,7 +1,7 @@
 package com.bercut.service.soap.service_profile;
 
 import com.bercut.service.findservices.ServiceContent;
-import com.bercut.service.wsdl.*;
+import com.bercut.service.wsdl.service_profile.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;

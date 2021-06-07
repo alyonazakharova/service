@@ -1,8 +1,8 @@
 package com.bercut.service.controller;
 
-import com.bercut.service.global_steps.GS81;
-import com.bercut.service.global_steps.GS81Inputs;
-import com.bercut.service.response.ResponseWithDescription;
+import com.bercut.service.global_steps.gs81.GS81;
+import com.bercut.service.global_steps.gs81.GS81Inputs;
+import com.bercut.service.global_steps.gs81.GS81Response;
 import com.bercut.service.soap.rates_management.RatesManagementClient;
 import com.bercut.service.soap.service_profile.ServiceProfileClient;
 import org.slf4j.Logger;
@@ -26,22 +26,22 @@ public class Controller {
     private RatesManagementClient ratesManagementClient;
 
     @RequestMapping(value = "/gs81", method = RequestMethod.GET)
-    public ResponseWithDescription getParams(@RequestParam(value = "testContur") String testContur,
-                                             @RequestParam(value = "trplId") long trplId, //проверить типы
-                                             @RequestParam(value = "branchId") long branchId, //проверить типы
-                                             @RequestParam(value = "servId") long servId, //проверить типы
-                                             @RequestParam(value = "systemName") String systemName,
+    public GS81Response getParams(@RequestParam(value = "testContur") String testContur,
+                                  @RequestParam(value = "trplId") long trplId, //проверить типы
+                                  @RequestParam(value = "branchId") long branchId, //проверить типы
+                                  @RequestParam(value = "servId") long servId, //проверить типы
+                                  @RequestParam(value = "systemName") String systemName,
 
-                                             @RequestParam(value = "nesovmestimyeUslugiGet", required = false) Boolean nesovmestimyeUslugiGet,
-                                             @RequestParam(value = "vkljuchenaVtarifnyjPlanGet", required = false) Boolean vkljuchenaVtarifnyjPlanGet,
-                                             @RequestParam(value = "vozmozhnostPokazyvatVpodkljuchennykhGet", required = false) Boolean vozmozhnostPokazyvatVpodkljuchennykhGet,
-                                             @RequestParam(value = "vidimostVdostupnykhGet", required = false) Boolean vidimostVdostupnykhGet,
+                                  @RequestParam(value = "nesovmestimyeUslugiGet", required = false) Boolean nesovmestimyeUslugiGet,
+                                  @RequestParam(value = "vkljuchenaVtarifnyjPlanGet", required = false) Boolean vkljuchenaVtarifnyjPlanGet,
+                                  @RequestParam(value = "vozmozhnostPokazyvatVpodkljuchennykhGet", required = false) Boolean vozmozhnostPokazyvatVpodkljuchennykhGet,
+                                  @RequestParam(value = "vidimostVdostupnykhGet", required = false) Boolean vidimostVdostupnykhGet,
 
-                                             @RequestParam(value = "kategoriiUslugiProduktyGet", required = false) String kategoriiUslugiProduktyGet,
-                                             @RequestParam(value = "uslugaPersolanlizaciiGet", required = false) Boolean uslugaPersolanlizaciiGet,
-                                             @RequestParam(value = "vozmozhnostPodkljuchenijaGet", required = false) Boolean vozmozhnostPodkljuchenijaGet,
-                                             @RequestParam(value = "vozmozhnostOtkljuchenijaGet", required = false) Boolean vozmozhnostOtkljuchenijaGet,
-                                             @RequestParam(value = "nazvanieUslugiGet", required = false) Boolean nazvanieUslugiGet) {
+                                  @RequestParam(value = "kategoriiUslugiProduktyGet", required = false) String kategoriiUslugiProduktyGet,
+                                  @RequestParam(value = "uslugaPersolanlizaciiGet", required = false) Boolean uslugaPersolanlizaciiGet,
+                                  @RequestParam(value = "vozmozhnostPodkljuchenijaGet", required = false) Boolean vozmozhnostPodkljuchenijaGet,
+                                  @RequestParam(value = "vozmozhnostOtkljuchenijaGet", required = false) Boolean vozmozhnostOtkljuchenijaGet,
+                                  @RequestParam(value = "nazvanieUslugiGet", required = false) Boolean nazvanieUslugiGet) {
 
         log.info(String.format("Received request with the following params: testContur=%s, trplId=%s, branchId=%s, " +
                         "servId=%s, systemName=%s, nesovmestimyeUslugiGet=%s, vkljuchenaVtarifnyjPlanGet=%s, " +

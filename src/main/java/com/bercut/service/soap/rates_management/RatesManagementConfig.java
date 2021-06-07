@@ -15,7 +15,7 @@ public class RatesManagementConfig {
     @Bean
     public Jaxb2Marshaller ratesManagementMarshaller() {
         Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
-        marshaller.setContextPath("com.bercut.service.rates_management");
+        marshaller.setContextPath("com.bercut.service.wsdl.rates_management");
         return marshaller;
     }
 
