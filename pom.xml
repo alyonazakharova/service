@@ -22,7 +22,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -41,7 +40,6 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j-impl -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
@@ -49,16 +47,10 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.commons</groupId>-->
-<!--            <artifactId>commons-lang3</artifactId>-->
-<!--            <version>3.12.0</version>-->
-<!--        </dependency>-->
-
     </dependencies>
 
     <build>
+
 <!--        <finalName>service</finalName>-->
 
         <plugins>
@@ -80,10 +72,10 @@
 <!--                </executions>-->
 <!--                <configuration>-->
 <!--                    <schemaLanguage>WSDL</schemaLanguage>-->
-<!--                    <generatePackage>com.bercut.service.wsdl</generatePackage>-->
+<!--                    <generatePackage>com.bercut.service.rates_management</generatePackage>-->
 <!--                    <schemas>-->
 <!--                        <schema>-->
-<!--                            <url>http://10.77.240.227:6111/spec/dsi/ServiceProfileManagement/ServiceProfilePortType?wsdl</url>-->
+<!--                            <url>http://10.12.75.114:8002/cc/sa/ratesmanagement/RatesManagement?wsdl</url>-->
 <!--                        </schema>-->
 <!--                    </schemas>-->
 <!--                </configuration>-->

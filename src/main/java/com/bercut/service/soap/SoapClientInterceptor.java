@@ -27,7 +27,6 @@ public class SoapClientInterceptor implements ClientInterceptor {
     public boolean handleResponse(MessageContext messageContext) throws WebServiceClientException {
         log.info("Handling the response...");
         WebServiceMessage message = messageContext.getResponse();
-//        message.writeTo(System.out);
         SoapMessage soapMessage = (SoapMessage) message;
         if (soapMessage.getSoapBody().hasFault()) {
             SoapFaultDetail detail = soapMessage.getSoapBody().getFault().getFaultDetail();

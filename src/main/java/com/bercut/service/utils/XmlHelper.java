@@ -1,5 +1,6 @@
 package com.bercut.service.utils;
 
+import com.bercut.service.exception.NoneOrMultipleTagsFoundException;
 import com.bercut.service.wsdl.ReadServiceResponseParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,5 +90,57 @@ public class XmlHelper {
             log.error(e.getMessage());
         }
         return list;
+    }
+
+    public static boolean isPresent(ReadServiceResponseParams response, String expression) {
+        try {
+            JAXBContext jaxbContext = JAXBContext.newInstance(ReadServiceResponseParams.class);
+            Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+            StringWriter stringWriter = new StringWriter();
+            jaxbMarshaller.marshal(response, stringWriter);
+            String xml = stringWriter.toString();
+
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            InputSource inputSource = new InputSource(new StringReader(xml));
+            Document doc = builder.parse(inputSource);
+
+            XPath xpath = XPathFactory.newInstance().newXPath();
+            XPathExpression expr = xpath.compile(expression);
+            NodeList nodes = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+            return nodes.getLength() == 1;
+        } catch (JAXBException | ParserConfigurationException | SAXException | IOException | XPathExpressionException e) {
+            log.error(e.getMessage());
+            return false; //???
+        }
+    }
+
+    public static String getSingleValue(ReadServiceResponseParams response, String expression) throws NoneOrMultipleTagsFoundException {
+        try {
+            JAXBContext jaxbContext = JAXBContext.newInstance(ReadServiceResponseParams.class);
+            Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+            StringWriter stringWriter = new StringWriter();
+            jaxbMarshaller.marshal(response, stringWriter);
+            String xml = stringWriter.toString();
+
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            InputSource inputSource = new InputSource(new StringReader(xml));
+            Document doc = builder.parse(inputSource);
+
+            XPath xpath = XPathFactory.newInstance().newXPath();
+            XPathExpression expr = xpath.compile(expression);
+            NodeList nodes = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+            if (nodes.getLength() == 1) {
+                String value = nodes.item(0).getTextContent();
+                log.info("Value = " + value);
+                return value;
+            } else {
+                throw new NoneOrMultipleTagsFoundException("Found 0 or more than 1 tags");
+            }
+        } catch (JAXBException | ParserConfigurationException | SAXException | IOException | XPathExpressionException e) {
+            log.error(e.getMessage());
+            return "";
+        }
     }
 }
