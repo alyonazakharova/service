@@ -28,40 +28,41 @@ public class XmlHelper {
 
     @SneakyThrows
     public static String getValueByXPath(ReadServiceResponseParams response, String expression, String reserveExpression) {
-        JAXBContext jaxbContext = JAXBContext.newInstance(ReadServiceResponseParams.class);
-        Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-        StringWriter stringWriter = new StringWriter();
-        jaxbMarshaller.marshal(response, stringWriter);
-        String xml = stringWriter.toString();
+        try(StringWriter stringWriter = new StringWriter();) {
+            JAXBContext jaxbContext = JAXBContext.newInstance(ReadServiceResponseParams.class);
+            Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+            jaxbMarshaller.marshal(response, stringWriter);
+            String xml = stringWriter.toString();
 
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        InputSource inputSource = new InputSource(new StringReader(xml));
-        Document doc = builder.parse(inputSource);
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            InputSource inputSource = new InputSource(new StringReader(xml));
+            Document doc = builder.parse(inputSource);
 
-        XPath xpath = XPathFactory.newInstance().newXPath();
-        XPathExpression expr = xpath.compile(expression);
-        NodeList nodes = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+            XPath xpath = XPathFactory.newInstance().newXPath();
+            XPathExpression expr = xpath.compile(expression);
+            NodeList nodes = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
 
-        if (nodes.getLength() == 1) {
-            log.info("Single element was found ");
-            return nodes.item(0).getTextContent();
-        } else {
-            expr = xpath.compile(reserveExpression);
-            nodes = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
             if (nodes.getLength() == 1) {
                 log.info("Single element was found ");
                 return nodes.item(0).getTextContent();
+            } else {
+                expr = xpath.compile(reserveExpression);
+                nodes = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+                if (nodes.getLength() == 1) {
+                    log.info("Single element was found ");
+                    return nodes.item(0).getTextContent();
+                }
+                log.info("Single element was not found both times");
+                return "false";
             }
-            log.info("Single element was not found both times");
-            return "false";
         }
     }
 
     public static List<String> getListByXPath(ReadServiceResponseParams response, String expression) {
         List<String> list = new ArrayList<>();
-        NodeList nodes = getNodes(response, expression, true);
-//        log.info("NODES: " + nodes.getLength());
+        NodeList nodes = getNodes(response, expression);
+        log.info(nodes.getLength() + " node(s) found");
         for (int i = 0; i < nodes.getLength(); i++) {
             list.add(nodes.item(i).getTextContent());
         }
@@ -69,41 +70,37 @@ public class XmlHelper {
     }
 
     public static boolean isPresent(ReadServiceResponseParams response, String expression) {
-        NodeList nodes = getNodes(response, expression, false);
-        return nodes.getLength() == 1;
+        NodeList nodes = getNodes(response, expression);
+        log.info(nodes.getLength() + " node(s) found");
+        return nodes.getLength() > 0;
     }
 
     @SneakyThrows
     public static String getSingleValue(ReadServiceResponseParams response, String expression) throws NoneOrMultipleTagsFoundException {
-        NodeList nodes = getNodes(response, expression, true);
+        NodeList nodes = getNodes(response, expression);
+        log.info(nodes.getLength() + " node(s) found");
         if (nodes.getLength() == 1) {
-//            log.info("Value = " + nodes.item(0).getTextContent());
             return nodes.item(0).getTextContent();
         }
-        throw new NoneOrMultipleTagsFoundException("Found 0 or more than 1 tags");
+        throw new NoneOrMultipleTagsFoundException(nodes.getLength() + " elements were found");
     }
 
     @SneakyThrows
-    private static NodeList getNodes(ReadServiceResponseParams response, String expression, boolean namespaseAware) {
-        JAXBContext jaxbContext = JAXBContext.newInstance(ReadServiceResponseParams.class);
-        Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-        StringWriter stringWriter = new StringWriter();
-        jaxbMarshaller.marshal(response, stringWriter);
-        String xml = stringWriter.toString();
+    private static NodeList getNodes(ReadServiceResponseParams response, String expression) {
+        try(StringWriter stringWriter = new StringWriter();) {
+            JAXBContext jaxbContext = JAXBContext.newInstance(ReadServiceResponseParams.class);
+            Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+            jaxbMarshaller.marshal(response, stringWriter);
+            String xml = stringWriter.toString();
 
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        if (namespaseAware) {
-            factory.setNamespaceAware(true);
-        }
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        InputSource inputSource = new InputSource(new StringReader(xml));
-        Document doc = builder.parse(inputSource);
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            InputSource inputSource = new InputSource(new StringReader(xml));
+            Document doc = builder.parse(inputSource);
 
-        XPath xpath = XPathFactory.newInstance().newXPath();
-        if (namespaseAware) {
-            xpath.setNamespaceContext(new NamespaceResolver(doc));
+            XPath xpath = XPathFactory.newInstance().newXPath();
+            XPathExpression expr = xpath.compile(expression);
+            return (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
         }
-        XPathExpression expr = xpath.compile(expression);
-        return (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
     }
 }

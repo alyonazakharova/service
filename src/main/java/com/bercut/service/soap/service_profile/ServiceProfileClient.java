@@ -44,7 +44,6 @@ public class ServiceProfileClient extends WebServiceGatewaySupport {
         } catch (WebServiceTransportException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
-
     }
 
     public ReadServiceResponseParams readService(String testContur, long branchId,

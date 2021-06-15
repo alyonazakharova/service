@@ -47,11 +47,17 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
     </dependencies>
 
     <build>
 
-<!--        <finalName>service</finalName>-->
+        <finalName>service</finalName>
 
         <plugins>
             <plugin>
@@ -72,7 +78,7 @@
 <!--                </executions>-->
 <!--                <configuration>-->
 <!--                    <schemaLanguage>WSDL</schemaLanguage>-->
-<!--                    <generatePackage>com.bercut.service.rates_management</generatePackage>-->
+<!--                    <generatePackage>com.bercut.service.wsdl.rates_management</generatePackage>-->
 <!--                    <schemas>-->
 <!--                        <schema>-->
 <!--                            <url>http://10.12.75.114:8002/cc/sa/ratesmanagement/RatesManagement?wsdl</url>-->

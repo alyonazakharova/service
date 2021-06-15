@@ -1,0 +1,53 @@
+{
+  "properties": [
+    {
+      "name": "v1",
+      "type": "java.lang.String",
+      "description": "Description for v1."
+    },
+    {
+      "name": "v2",
+      "type": "java.lang.String",
+      "description": "Description for v2."
+    },
+    {
+      "name": "v3",
+      "type": "java.lang.String",
+      "description": "Description for v3."
+    },
+    {
+      "name": "v4",
+      "type": "java.lang.String",
+      "description": "Description for v4."
+    },
+    {
+      "name": "v5",
+      "type": "java.lang.String",
+      "description": "Description for v5."
+    },
+    {
+      "name": "ratesmanagement.v1",
+      "type": "java.lang.String",
+      "description": "Description for ratesmanagement.v1."
+    },
+    {
+      "name": "ratesmanagement.v2",
+      "type": "java.lang.String",
+      "description": "Description for ratesmanagement.v2."
+    },
+    {
+      "name": "ratesmanagement.v3",
+      "type": "java.lang.String",
+      "description": "Description for ratesmanagement.v3."
+    },
+    {
+      "name": "ratesmanagement.v4",
+      "type": "java.lang.String",
+      "description": "Description for ratesmanagement.v4."
+    },
+    {
+      "name": "ratesmanagement.v5",
+      "type": "java.lang.String",
+      "description": "Description for ratesmanagement.v5."
+    }
+  ] }

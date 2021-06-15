@@ -8,6 +8,7 @@ import com.bercut.service.soap.service_profile.ServiceProfileClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api")
+@EnableAsync
 public class Controller {
 
     private final Logger log = LoggerFactory.getLogger(Controller.class);
@@ -27,9 +29,9 @@ public class Controller {
 
     @RequestMapping(value = "/gs81", method = RequestMethod.GET)
     public GS81Response getParams(@RequestParam(value = "testContur") String testContur,
-                                  @RequestParam(value = "trplId") long trplId, //проверить типы
-                                  @RequestParam(value = "branchId") long branchId, //проверить типы
-                                  @RequestParam(value = "servId") long servId, //проверить типы
+                                  @RequestParam(value = "trplId") long trplId,
+                                  @RequestParam(value = "branchId") long branchId,
+                                  @RequestParam(value = "servId") long servId,
                                   @RequestParam(value = "systemName") String systemName,
 
                                   @RequestParam(value = "nesovmestimyeUslugiGet", required = false) Boolean nesovmestimyeUslugiGet,
@@ -69,12 +71,7 @@ public class Controller {
         gs81Inputs.setVozmozhnostOtkljuchenijaGet(vozmozhnostOtkljuchenijaGet);
         gs81Inputs.setNazvanieUslugiGet(nazvanieUslugiGet);
 
-//        GS81 gs81 = new GS81(soapClient, gs81Inputs);
         GS81 gs81 = new GS81(serviceProfileClient, ratesManagementClient, gs81Inputs);
-
-//        GS81 gs81 = new GS81(soapClient, testContur, trplName, branchId, servId, systemName,
-//                nesovmestimyeUslugiGet, vkljuchenaVtarifnyjPlanGet,
-//                vozmozhnostPokazyvatVpodkljuchennykhGet, vidimostVdostupnykhGet);
 
         return gs81.execute();
     }
