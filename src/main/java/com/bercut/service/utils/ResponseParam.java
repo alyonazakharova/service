@@ -1,29 +1,27 @@
 package com.bercut.service.utils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Data;
 
+@Data
 public class ResponseParam<T> {
 
-    private final T value;
+    private String description;
+
+    private T value;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private final String description;
+    private String result;
 
-    public ResponseParam(T value) {
-        this.value = value;
-        this.description = null;
-    }
-
-    public ResponseParam(T value, String description) {
-        this.value = value;
+    public ResponseParam(String description) {
         this.description = description;
+        this.value = null;
+        this.result = null;
     }
 
-    public T getValue() {
-        return value;
-    }
-
-    public String getDescription() {
-        return description;
+    public ResponseParam(String description, T value, String result) {
+        this.description = description;
+        this.value = value;
+        this.result = result;
     }
 }

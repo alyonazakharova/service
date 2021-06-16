@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.ws.client.WebServiceFaultException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -32,7 +33,6 @@ public class GS81 {
     private ResponseParam<String> serviceNameTP;
     private ResponseParam<String> productIdTP;
     private ResponseParam<String> serviceName;
-
     private ResponseParam<String> serviceNameCategory;
     private ResponseParam<String> productIdCategory;
 
@@ -45,6 +45,25 @@ public class GS81 {
         this.runNextStep = true;
         this.runStep10Step11 = true;
         this.gs81Response = new GS81Response();
+    }
+
+    public GS81Response execute() {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<?> future = executor.submit(steps);
+        try {
+            future.get(120, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException e) {
+            if (!executor.isTerminated()) {
+                executor.shutdownNow();
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (TimeoutException e) {
+            if (!executor.isTerminated()) {
+                executor.shutdownNow();
+            }
+            throw new ResponseStatusException(HttpStatus.REQUEST_TIMEOUT, "Timeout exceeded");
+        }
+        return gs81Response;
     }
 
     private final Runnable steps = new Thread() {
@@ -63,41 +82,49 @@ public class GS81 {
             if (!runNextStep) {
                 return;
             }
+
+            ExecutorService executor = Executors.newFixedThreadPool(9);
+            List<Future<?>> futures = new ArrayList<>();
+
             if (optionalParameterCheck(inputs.getNesovmestimyeUslugiGet())) {
-                gs81Response.setIncompatibleServIdList(getIncompatibleServIdList()); //step 5
+                futures.add(executor.submit(getIncompatibleServIdList));
             }
             if (optionalParameterCheck(inputs.getVkljuchenaVtarifnyjPlanGet())) {
-                gs81Response.setVkljuchenaVtarifnyjPlanFlag(getVkljuchenaVtarifnyjPlanFlag()); //step 6
+                futures.add(executor.submit(getVkljuchenaVtarifnyjPlanFlag));
             }
             if (optionalParameterCheck(inputs.getVozmozhnostPokazyvatVpodkljuchennykhGet())) {
-                gs81Response.setVozmozhnostPokazyvatVpodkljuchennykhFlag(getVozmozhnostPokazyvatVpodkljuchennykhFlag()); //step 7
+                futures.add(executor.submit(getVozmozhnostPokazyvatVpodkljuchennykhFlag));
             }
             if (optionalParameterCheck(inputs.getVidimostVdostupnykhGet())) {
-                gs81Response.setVidimostVdostupnykhFlag(getVidimostVdostupnykhFlag()); //step 8
+                futures.add(executor.submit(getVidimostVdostupnykhFlag));
             }
             String kategoriiUslugiProduktyGet = inputs.getKategoriiUslugiProduktyGet();
             if (kategoriiUslugiProduktyGet != null) {
                 if (!kategoriiUslugiProduktyGet.equals("n/a")) {
-                    gs81Response.setServiceNameCategory(getServiceNameCategory()); //step 9
-                    if (runStep10Step11) {
-                        gs81Response.setProductIdCategory(getProductIdCategory()); //step10
-                        if (runStep10Step11) {
-                            gs81Response.setKategoriiUslugiProduktyFlag(getKategoriiUslugiProduktyFlag()); //step11
-                        }
-                    }
+                    futures.add(executor.submit(steps9_11));
                 }
             }
             if (optionalParameterCheck(inputs.getUslugaPersolanlizaciiGet())) {
-                gs81Response.setUslugaPersonalizaciiFlag(getUslugaPersonalizaciiFlag()); //step 12
+                futures.add(executor.submit(getUslugaPersonalizaciiFlag));
             }
             if (optionalParameterCheck(inputs.getVozmozhnostPodkljuchenijaGet())) {
-                gs81Response.setVozmozhnostPodkljuchenijaFlag(getVozmozhnostPodkljuchenijaFlag()); //step 13
+                futures.add(executor.submit(getVozmozhnostPodkljuchenijaFlag));
             }
             if (optionalParameterCheck(inputs.getVozmozhnostOtkljuchenijaGet())) {
-                gs81Response.setVozmozhnostOtkljuchenijaFlag(getVozmozhnostOtkljuchenijaFlag()); //step 14
+                futures.add(executor.submit(getVozmozhnostOtkljuchenijaFlag));
             }
             if (optionalParameterCheck(inputs.getNazvanieUslugiGet())) {
-                gs81Response.setNazvanieUslugiText(getNazvanieUslugiText()); //step 15
+                futures.add(executor.submit(getNazvanieUslugiText));
+            }
+
+            for (Future<?> future: futures) {
+                try {
+                    future.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                    executor.shutdownNow();
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+                }
             }
         }
     };
@@ -106,35 +133,16 @@ public class GS81 {
         return param == null || param; //param is true by default
     }
 
-    public GS81Response execute() {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Future<?> future = executor.submit(steps);
-        try {
-            future.get(150, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException e) {
-            if (!executor.isTerminated()) {
-                executor.shutdownNow();
-            }
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (TimeoutException e) {
-            if (!executor.isTerminated()) {
-                executor.shutdownNow();
-            }
-            throw new ResponseStatusException(HttpStatus.REQUEST_TIMEOUT, "Timeout exceeded");
-        }
-        return gs81Response;
-    }
-
-
     //step 1
     private ResponseParam<String> getTrplName() {
         log.info("Executing step 1");
+        trplName = new ResponseParam<>("Название ТП в Биллинге");
         String tpName = ratesManagementClient.getRateProfile(inputs.getTestContur(), inputs.getBranchId(), inputs.getTrplId());
         if (tpName == null) {
             runNextStep = false;
-            trplName = new ResponseParam<>(null, "Не удалось получить название тарифного плана в биллинге");
+            trplName.setResult("Не удалось получить название тарифного плана в биллинге");
         } else {
-            trplName = new ResponseParam<>(tpName);
+            trplName.setValue(tpName);
         }
         return trplName;
     }
@@ -142,14 +150,15 @@ public class GS81 {
     //step 2
     private ResponseParam<String> getServiceNameTP() {
         log.info("Executing step 2");
+        serviceNameTP = new ResponseParam<>("Название сервиса в ПК для ТП");
         try {
             String xPath = "/serviceParams/productName";
             FindServicesResponseParams response = serviceProfileClient.findServices(inputs.getTestContur(), 0, xPath, trplName.getValue(), null);
             String name = response.getServiceDescription().get(0).getServiceName(); // minOccurs="0" maxOccurs="unbounded"
-            serviceNameTP = new ResponseParam<>(name);
+            serviceNameTP.setValue(name);
         } catch (WebServiceFaultException e) {
-            String description = String.format("Не удалось определись название сервиса в ПК для ТП '%s': %s", trplName.getValue(), e.getMessage());
-            serviceNameTP = new ResponseParam<>(null, description);
+            String error = String.format("Не удалось определись название сервиса в ПК для ТП '%s': %s", trplName.getValue(), e.getMessage());
+            serviceNameTP.setResult(error);
             runNextStep = false;
         }
         return serviceNameTP;
@@ -158,14 +167,15 @@ public class GS81 {
     //step 3
     private ResponseParam<String> getProductIdTP() {
         log.info("Executing step 3");
+        productIdTP = new ResponseParam<>("productId в ПК для ТП");
         try {
             String xPath = "/serviceParams/productID";
             ReadServiceResponseParams response = serviceProfileClient.readService(inputs.getTestContur(), 0, serviceNameTP.getValue(), xPath);
             String expression = "//serviceContent/productID";
-            productIdTP = new ResponseParam<>(XmlHelper.getSingleValue(response, expression));
+            productIdTP.setValue(XmlHelper.getSingleValue(response, expression));
         } catch (WebServiceFaultException | NoneOrMultipleTagsFoundException e) {
-            String description = String.format("Не удалось определить productId для ТП '%s': %s", serviceNameTP.getValue(), e.getMessage());
-            productIdTP = new ResponseParam<>(null, description);
+            String error = String.format("Не удалось определить productId для ТП '%s': %s", serviceNameTP.getValue(), e.getMessage());
+            productIdTP.setResult(error);
             runNextStep = false;
         }
         return productIdTP;
@@ -174,114 +184,148 @@ public class GS81 {
     //step 4
     private ResponseParam<String> getServiceName() {
         log.info("Executing step 4");
+        serviceName = new ResponseParam<>("Название сервиса в ПК для услуги");
         try {
             String xPath = "/serviceParams/id_uslugi_serviceId[1]/id_uslugi_serviceId_value";
             FindServicesResponseParams response = serviceProfileClient.findServices(inputs.getTestContur(), 0, xPath, null, inputs.getServId());
             String name = response.getServiceDescription().get(0).getServiceName();
-            serviceName = new ResponseParam<>(name);
+            serviceName.setValue(name);
         } catch (WebServiceFaultException e) {
-            String description = String.format("Для услуги %s не удалось определить название сервиса в ПК: %s",
+            String error = String.format("Для услуги %s не удалось определить название сервиса в ПК: %s",
                     inputs.getServId(), e.getMessage());
-            serviceName = new ResponseParam<>(null, description);
+            serviceName.setResult(error);
             runNextStep = false;
         }
         return serviceName;
     }
 
     //step 5
-    private ResponseParam<List<String>> getIncompatibleServIdList() {
-        log.info("Executing step 5");
-        try {
-            String xPath = "/serviceParams/nesovmestimye_uslugi_serviceId";
-            ReadServiceResponseParams response = serviceProfileClient.readService(inputs.getTestContur(), inputs.getBranchId(), serviceName.getValue(), xPath);
-//            ReadServiceResponseParams response = serviceProfileClient.readService(inputs.getTestContur(), inputs.getBranchId(), "dobavit_skorost_na_3_gb", xPath);
-            String expression = String.format("//*[local-name()='nesovmestimye_uslugi_serviceId_value'][following-sibling::rule[link_systemName_nesovmestimye_uslugi_serviceId_in='%s' and link_productTariffId_nesovmestimye_uslugi_serviceId_in=%s]]",
-                    inputs.getSystemName(), productIdTP.getValue());
-//                    "MSDCRM", 35765);
-            List<String> incompatibleServIds = XmlHelper.getListByXPath(response, expression);
-            return new ResponseParam<>(incompatibleServIds);
-        } catch (WebServiceFaultException e) {
-            String description = String.format("Не удалось определить список несовместимых услуг для услуги %s: %s",
-                    inputs.getServId(), e.getMessage());
-            return new ResponseParam<>(null, description);
+    private final Runnable getIncompatibleServIdList = new Thread() {
+        @Override
+        public void run() {
+            log.info("Executing runnable step 5");
+            ResponseParam<List<String>> list = new ResponseParam<>("Несовместимые услуги");
+            try {
+                String xPath = "/serviceParams/nesovmestimye_uslugi_serviceId";
+                ReadServiceResponseParams response = serviceProfileClient.readService(inputs.getTestContur(), inputs.getBranchId(), serviceName.getValue(), xPath);
+                String expression = String.format("//*[local-name()='nesovmestimye_uslugi_serviceId_value'][following-sibling::rule[link_systemName_nesovmestimye_uslugi_serviceId_in='%s' and link_productTariffId_nesovmestimye_uslugi_serviceId_in=%s]]",
+                        inputs.getSystemName(), productIdTP.getValue());
+                List<String> incompatibleServIds = XmlHelper.getListByXPath(response, expression);
+                list.setValue(incompatibleServIds);
+            } catch (WebServiceFaultException e) {
+                String error = String.format("Не удалось определить список несовместимых услуг для услуги %s: %s",
+                        inputs.getServId(), e.getMessage());
+                list.setResult(error);
+            }
+            gs81Response.setIncompatibleServIdList(list);
         }
-    }
+    };
 
     //step 6
-    private ResponseParam<String> getVkljuchenaVtarifnyjPlanFlag() {
-        log.info("Executing step 6");
-        String systemName = inputs.getSystemName();
-        String productId = productIdTP.getValue();
-        try {
-            String xPath = "/serviceParams/vkljuchena_v_tarifnyj_plan_yesNo";
-            ReadServiceResponseParams response = serviceProfileClient.readService(inputs.getTestContur(), inputs.getBranchId(), serviceName.getValue(), xPath);
-            String expression = String.format("//*[local-name()='vkljuchena_v_tarifnyj_plan_yesNo']//vkljuchena_v_tarifnyj_plan_yesNo_value[following-sibling::rule[link_systemName_vkljuchena_v_tarifnyj_plan_yesNo_in='%s' and link_productTariffId_vkljuchena_v_tarifnyj_plan_yesNo_in=%s]]",
-                    systemName, productId);
-            String reserveExpression = String.format("//*[local-name()='vkljuchena_v_tarifnyj_plan_yesNo']//vkljuchena_v_tarifnyj_plan_yesNo_value[following-sibling::rule[link_systemName_vkljuchena_v_tarifnyj_plan_yesNo='%s' and link_productTariffId_vkljuchena_v_tarifnyj_plan_yesNo=%s]]",
-                    systemName, productId);
-            String result = XmlHelper.getValueByXPath(response, expression, reserveExpression);
-            return new ResponseParam<>(result);
-        } catch (WebServiceFaultException e) {
-            String description = String.format("Не удалось определить включение в тарифный план для услуги %s: %s",
-                    serviceName.getValue(),
-                    e.getMessage());
-            return new ResponseParam<>(null, description);
+    private final Runnable getVkljuchenaVtarifnyjPlanFlag = new Thread() {
+        @Override
+        public void run() {
+            log.info("Executing step 6");
+            ResponseParam<String> flag = new ResponseParam<>("Включена в тарифный план");
+            String systemName = inputs.getSystemName();
+            String productId = productIdTP.getValue();
+            try {
+                String xPath = "/serviceParams/vkljuchena_v_tarifnyj_plan_yesNo";
+                ReadServiceResponseParams response = serviceProfileClient.readService(inputs.getTestContur(), inputs.getBranchId(), serviceName.getValue(), xPath);
+                String expression = String.format("//*[local-name()='vkljuchena_v_tarifnyj_plan_yesNo']//vkljuchena_v_tarifnyj_plan_yesNo_value[following-sibling::rule[link_systemName_vkljuchena_v_tarifnyj_plan_yesNo_in='%s' and link_productTariffId_vkljuchena_v_tarifnyj_plan_yesNo_in=%s]]",
+                        systemName, productId);
+                String reserveExpression = String.format("//*[local-name()='vkljuchena_v_tarifnyj_plan_yesNo']//vkljuchena_v_tarifnyj_plan_yesNo_value[following-sibling::rule[link_systemName_vkljuchena_v_tarifnyj_plan_yesNo='%s' and link_productTariffId_vkljuchena_v_tarifnyj_plan_yesNo=%s]]",
+                        systemName, productId);
+                String result = XmlHelper.getValueByXPath(response, expression, reserveExpression);
+                flag.setValue(result);
+            } catch (WebServiceFaultException e) {
+                String error = String.format("Не удалось определить включение в тарифный план для услуги %s: %s",
+                        serviceName.getValue(),
+                        e.getMessage());
+                flag.setResult(error);
+            }
+            gs81Response.setVkljuchenaVtarifnyjPlanFlag(flag);
         }
-    }
+    };
 
     //step 7
-    private ResponseParam<String> getVozmozhnostPokazyvatVpodkljuchennykhFlag() {
-        log.info("Executing step 7");
-        String systemName = inputs.getSystemName();
-        String productId = productIdTP.getValue();
-        try {
-            String xPath = "/serviceParams/vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo";
-            ReadServiceResponseParams response = serviceProfileClient.readService(inputs.getTestContur(), inputs.getBranchId(), serviceName.getValue(), xPath);
-            String expression = String.format("//*[local-name()='vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo']//vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo_value[following-sibling::rule[link_systemName_vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo_in='%s' and link_productTariffId_vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo_in=%s]]",
-                    systemName, productId);
-            String reserveExpression = String.format("//*[local-name()='vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo']//vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo_value[following-sibling::rule[link_systemName_vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo='%s' and link_productTariffId_vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo=%s]]",
-                    systemName, productId);
-            String result = XmlHelper.getValueByXPath(response, expression, reserveExpression);
-            return new ResponseParam<>(result);
-        } catch (WebServiceFaultException e) {
-            String description = String.format("Не удалось определить возможность показывать в подключенных для услуги %s: %s",
-                    serviceName.getValue(), e.getMessage());
-            return new ResponseParam<>(null, description);
+    private final Runnable getVozmozhnostPokazyvatVpodkljuchennykhFlag = new Thread() {
+        @Override
+        public void run() {
+            log.info("Executing step 7");
+            ResponseParam<String> flag = new ResponseParam<>("Возможность показывать в подключенных");
+            String systemName = inputs.getSystemName();
+            String productId = productIdTP.getValue();
+            try {
+                String xPath = "/serviceParams/vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo";
+                ReadServiceResponseParams response = serviceProfileClient.readService(inputs.getTestContur(), inputs.getBranchId(), serviceName.getValue(), xPath);
+                String expression = String.format("//*[local-name()='vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo']//vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo_value[following-sibling::rule[link_systemName_vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo_in='%s' and link_productTariffId_vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo_in=%s]]",
+                        systemName, productId);
+                String reserveExpression = String.format("//*[local-name()='vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo']//vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo_value[following-sibling::rule[link_systemName_vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo='%s' and link_productTariffId_vozmozhnost_pokazyvat_v_podkljuchennykh_yesNo=%s]]",
+                        systemName, productId);
+                String result = XmlHelper.getValueByXPath(response, expression, reserveExpression);
+                flag.setValue(result);
+            } catch (WebServiceFaultException e) {
+                String error = String.format("Не удалось определить возможность показывать в подключенных для услуги %s: %s",
+                        serviceName.getValue(), e.getMessage());
+                flag.setResult(error);
+            }
+            gs81Response.setVozmozhnostPokazyvatVpodkljuchennykhFlag(flag);
         }
-    }
+    };
 
     //step 8
-    private ResponseParam<String> getVidimostVdostupnykhFlag() {
-        log.info("Executing step 8");
-        String productId = productIdTP.getValue();
-        try {
-            String xPath = " /serviceParams/vidimost_v_dostupnykh_yesNo";
-            ReadServiceResponseParams response = serviceProfileClient.readService(inputs.getTestContur(), inputs.getBranchId(), serviceName.getValue(), xPath);
-            String expression = String.format("//*[local-name()='vidimost_v_dostupnykh_yesNo']//vidimost_v_dostupnykh_yesNo_value[following-sibling::rule[link_systemName_vidimost_v_dostupnykh_yesNo_in='%s' and link_productTariffId_vidimost_v_dostupnykh_yesNo_in=%s]]",
-                    inputs.getSystemName(), productId);
-            String reserveExpression = String.format("//*[local-name()='vidimost_v_dostupnykh_yesNo']//vidimost_v_dostupnykh_yesNo_value[following-sibling::rule[link_systemName_vidimost_v_dostupnykh_yesNo='%s' and link_productTariffId_vidimost_v_dostupnykh_yesNo=%s]]",
-                    inputs.getSystemName(), productId);
-            String result = XmlHelper.getValueByXPath(response, expression, reserveExpression);
-            return new ResponseParam<>(result);
-        } catch (WebServiceFaultException e) {
-            String description = String.format("Не удалось определить видимость услуги %s в доступных для абонента: %s",
-                    serviceName.getValue() ,e.getMessage());
-            return new ResponseParam<>(null, description);
+    private final Runnable getVidimostVdostupnykhFlag = new Thread() {
+        @Override
+        public void run() {
+            log.info("Executing step 8");
+            ResponseParam<String> flag = new ResponseParam<>("Видимость в доступных");
+            String productId = productIdTP.getValue();
+            try {
+                String xPath = " /serviceParams/vidimost_v_dostupnykh_yesNo";
+                ReadServiceResponseParams response = serviceProfileClient.readService(inputs.getTestContur(), inputs.getBranchId(), serviceName.getValue(), xPath);
+                String expression = String.format("//*[local-name()='vidimost_v_dostupnykh_yesNo']//vidimost_v_dostupnykh_yesNo_value[following-sibling::rule[link_systemName_vidimost_v_dostupnykh_yesNo_in='%s' and link_productTariffId_vidimost_v_dostupnykh_yesNo_in=%s]]",
+                        inputs.getSystemName(), productId);
+                String reserveExpression = String.format("//*[local-name()='vidimost_v_dostupnykh_yesNo']//vidimost_v_dostupnykh_yesNo_value[following-sibling::rule[link_systemName_vidimost_v_dostupnykh_yesNo='%s' and link_productTariffId_vidimost_v_dostupnykh_yesNo=%s]]",
+                        inputs.getSystemName(), productId);
+                String result = XmlHelper.getValueByXPath(response, expression, reserveExpression);
+                flag.setValue(result);
+            } catch (WebServiceFaultException e) {
+                String error = String.format("Не удалось определить видимость услуги %s в доступных для абонента: %s",
+                        serviceName.getValue() ,e.getMessage());
+                flag.setResult(error);
+            }
+            gs81Response.setVidimostVdostupnykhFlag(flag);
         }
-    }
+    };
+
+    private final Runnable steps9_11 = new Thread() {
+        @Override
+        public void run() {
+            log.info("Executing steps 9-11");
+            gs81Response.setServiceNameCategory(getServiceNameCategory()); //step 9
+            if (runStep10Step11) {
+                gs81Response.setProductIdCategory(getProductIdCategory()); //step10
+                if (runStep10Step11) {
+                    gs81Response.setKategoriiUslugiProduktyFlag(getKategoriiUslugiProduktyFlag()); //step11
+                }
+            }
+        }
+    };
 
     //step 9
     private ResponseParam<String> getServiceNameCategory() {
         log.info("Executing step 9");
+        serviceNameCategory = new ResponseParam<>("Название категории услуги (продукта) в ПК");
         try {
             String xPath = "/serviceParams/productName";
             FindServicesResponseParams response = serviceProfileClient.findServices(inputs.getTestContur(), 0, xPath, inputs.getKategoriiUslugiProduktyGet(), null);
             String serviceName = response.getServiceDescription().get(0).getServiceName();
-            serviceNameCategory = new ResponseParam<>(serviceName);
+            serviceNameCategory.setValue(serviceName);
         } catch (WebServiceFaultException e) {
-            String description = String.format("Не удалось определись название сервиса в ПК для категории услуги '%s': %s",
+            String error = String.format("Не удалось определись название сервиса в ПК для категории услуги '%s': %s",
                     inputs.getKategoriiUslugiProduktyGet(), e.getMessage());
-            serviceNameCategory = new ResponseParam<>(null, description);
+            serviceNameCategory.setResult(error);
             runStep10Step11 = false;
         }
         return serviceNameCategory;
@@ -290,15 +334,16 @@ public class GS81 {
     //step 10
     private ResponseParam<String> getProductIdCategory() {
         log.info("Executing step 10");
+        productIdCategory = new ResponseParam<>("productId в ПК для категории услуги (продукта)");
         try {
             String xPath = "/serviceParams/productID";
             ReadServiceResponseParams response = serviceProfileClient.readService(inputs.getTestContur(), 0, serviceNameCategory.getValue(), xPath);
             String expression = "//*[local-name()='serviceContent']/productID";
-            productIdCategory = new ResponseParam<>(XmlHelper.getSingleValue(response, expression));
+            productIdCategory.setValue(XmlHelper.getSingleValue(response, expression));
         } catch (WebServiceFaultException e) {
-            String description = String.format("Не удалось определить productId для категории услуги '%s': %s",
+            String error = String.format("Не удалось определить productId для категории услуги '%s': %s",
                     serviceNameCategory.getValue(), e.getMessage());
-            productIdCategory = new ResponseParam<>(null, description);
+            productIdCategory.setResult(error);
             runStep10Step11 = false;
         }
         return productIdCategory;
@@ -307,66 +352,87 @@ public class GS81 {
     //step 11
     private ResponseParam<String> getKategoriiUslugiProduktyFlag() {
         log.info("Executing step 11");
+        ResponseParam<String> flag = new ResponseParam<>("Принадлежность к категории " + inputs.getKategoriiUslugiProduktyGet());
         try {
             String xPath = "/serviceParams/kategorii_uslugi_produkty_productServCatId";
             ReadServiceResponseParams response = serviceProfileClient.readService(inputs.getTestContur(), 0, serviceName.getValue(), xPath);
             String expression = String.format("//*[local-name()='kategorii_uslugi_produkty_productServCatId'][kategorii_uslugi_produkty_productServCatId_value=%s and rule/link_systemName_kategorii_uslugi_produkty_productServCatId='%s']",
                     productIdCategory.getValue(), inputs.getSystemName());
             if (XmlHelper.isPresent(response, expression)) {
-                return new ResponseParam<>("true");
+                 flag.setValue("true");
+            } else {
+                flag.setValue("false");
             }
-            return new ResponseParam<>("false");
         } catch (WebServiceFaultException e) {
-            String description = String.format("Ошибка: %s", e.getMessage());
-            return new ResponseParam<>("false", description);
+            String error = String.format("Ошибка: %s", e.getMessage());
+            flag.setValue("false");
+            flag.setResult(error);
         }
+        return flag;
     }
 
     //step 12
-    private ResponseParam<String> getUslugaPersonalizaciiFlag() {
-        log.info("Executing step 12");
-        try {
-            String xPath = "/serviceParams/usluga_personalizacii_yesNo";
-            ReadServiceResponseParams response = serviceProfileClient.readService(inputs.getTestContur(), inputs.getBranchId(), serviceName.getValue(), xPath);
-            String expression = String.format("//*[local-name()='usluga_personalizacii_yesNo'][rule/link_systemName_usluga_personalizacii_yesNo_in='%s' and rule/link_productTariffId_usluga_personalizacii_yesNo_in=%s]",
-                    inputs.getSystemName(), productIdTP.getValue());
-            String singleTagFound = String.valueOf(XmlHelper.isPresent(response, expression));
-            return new ResponseParam<>(singleTagFound);
-        } catch (WebServiceFaultException e) {
-            String description = String.format("Ошибка: %s", e.getMessage());
-            return new ResponseParam<>(null, description);
+    private final Runnable getUslugaPersonalizaciiFlag = new Thread() {
+        @Override
+        public void run() {
+            log.info("Executing step 12");
+            ResponseParam<String> flag = new ResponseParam<>("Услуга персонализации");
+            try {
+                String xPath = "/serviceParams/usluga_personalizacii_yesNo";
+                ReadServiceResponseParams response = serviceProfileClient.readService(inputs.getTestContur(), inputs.getBranchId(), serviceName.getValue(), xPath);
+                String expression = String.format("//*[local-name()='usluga_personalizacii_yesNo'][rule/link_systemName_usluga_personalizacii_yesNo_in='%s' and rule/link_productTariffId_usluga_personalizacii_yesNo_in=%s]",
+                        inputs.getSystemName(), productIdTP.getValue());
+                String singleTagFound = String.valueOf(XmlHelper.isPresent(response, expression));
+                flag.setValue(singleTagFound);
+            } catch (WebServiceFaultException e) {
+                String error = String.format("Ошибка: %s", e.getMessage());
+                flag.setResult(error);
+            }
+            gs81Response.setUslugaPersonalizaciiFlag(flag);
         }
-    }
+    };
 
     //step 13
-    private ResponseParam<String> getVozmozhnostPodkljuchenijaFlag() {
-        log.info("Executing step 13");
-        String xPath = "/serviceParams/vozmozhnost_podkljuchenija_yesNo";
-        String expression = String.format("//*[local-name()='vozmozhnost_podkljuchenija_yesNo']/vozmozhnost_podkljuchenija_yesNo_value[following-sibling::rule[link_systemName_vozmozhnost_podkljuchenija_yesNo_in='%s' and link_productTariffId_vozmozhnost_podkljuchenija_yesNo_in=%s]]",
-                inputs.getSystemName(), productIdTP.getValue());
-        return getSingleValueInReadServiceResponse(xPath, expression);
-    }
+    private final Runnable getVozmozhnostPodkljuchenijaFlag = new Thread() {
+        @Override
+        public void run() {
+            log.info("Executing step 13");
+            String xPath = "/serviceParams/vozmozhnost_podkljuchenija_yesNo";
+            String expression = String.format("//*[local-name()='vozmozhnost_podkljuchenija_yesNo']/vozmozhnost_podkljuchenija_yesNo_value[following-sibling::rule[link_systemName_vozmozhnost_podkljuchenija_yesNo_in='%s' and link_productTariffId_vozmozhnost_podkljuchenija_yesNo_in=%s]]",
+                    inputs.getSystemName(), productIdTP.getValue());
+            gs81Response.setVozmozhnostPodkljuchenijaFlag(getSingleValueInReadServiceResponse(xPath, expression,
+                    "Возможность подключения", false));
+        }
+    };
 
     //step 14
-    private ResponseParam<String> getVozmozhnostOtkljuchenijaFlag() {
-        log.info("Executing step 14");
-        String xPath = "/serviceParams/vozmozhnost_otkljuchenija_yesNo";
-        String expression = String.format("//*[local-name()='vozmozhnost_otkljuchenija_yesNo']/vozmozhnost_otkljuchenija_yesNo_value[following-sibling::rule[link_systemName_vozmozhnost_otkljuchenija_yesNo_in='%s' and link_productTariffId_vozmozhnost_otkljuchenija_yesNo_in=%s]]",
-                inputs.getSystemName(), productIdTP.getValue());
-        return getSingleValueInReadServiceResponse(xPath, expression);
-    }
+    private final Runnable getVozmozhnostOtkljuchenijaFlag = new Thread() {
+        @Override
+        public void run() {
+            log.info("Executing step 14");
+            String xPath = "/serviceParams/vozmozhnost_otkljuchenija_yesNo";
+            String expression = String.format("//*[local-name()='vozmozhnost_otkljuchenija_yesNo']/vozmozhnost_otkljuchenija_yesNo_value[following-sibling::rule[link_systemName_vozmozhnost_otkljuchenija_yesNo_in='%s' and link_productTariffId_vozmozhnost_otkljuchenija_yesNo_in=%s]]",
+                    inputs.getSystemName(), productIdTP.getValue());
+            gs81Response.setVozmozhnostOtkljuchenijaFlag(getSingleValueInReadServiceResponse(xPath, expression,
+                    "Возможность отключения", false));
+        }
+    };
 
-    //step 15
-    private ResponseParam<String> getNazvanieUslugiText() {
-        log.info("Executing step 15");
-        String xPath = "/serviceParams/nazvanie_uslugi_text";
-        String expression = String.format("//*[local-name()='nazvanie_uslugi_text']/nazvanie_uslugi_text_value[following-sibling::rule[link_systemName_nazvanie_uslugi_text_in='%s' and link_branchId_nazvanie_uslugi_text_in=%s]]",
-                inputs.getSystemName(), inputs.getBranchId());
-        return getSingleValueInReadServiceResponse(xPath, expression);
-    }
+    //step 4
+    private final Runnable getNazvanieUslugiText = new Thread() {
+        @Override
+        public void run() {
+            log.info("Executing step 15");
+            String xPath = "/serviceParams/nazvanie_uslugi_text";
+            String expression = String.format("//*[local-name()='nazvanie_uslugi_text']/nazvanie_uslugi_text_value[following-sibling::rule[link_systemName_nazvanie_uslugi_text_in='%s' and link_branchId_nazvanie_uslugi_text_in=%s]]",
+                    inputs.getSystemName(), inputs.getBranchId());
+            gs81Response.setNazvanieUslugiText(getSingleValueInReadServiceResponse(xPath, expression,
+                    "Название услуги", true));
+        }
+    };
 
     //auxiliary method for steps 13-15
-    private ResponseParam<String> getSingleValueInReadServiceResponse(String xPath, String expression) {
+    private ResponseParam<String> getSingleValueInReadServiceResponse(String xPath, String expression, String paramDescription, boolean emptyString) {
         try {
             ReadServiceResponseParams response = serviceProfileClient.readService(
                     inputs.getTestContur(),
@@ -374,12 +440,16 @@ public class GS81 {
                     serviceName.getValue(),
                     xPath);
             String flag = XmlHelper.getSingleValue(response, expression);
-            return new ResponseParam<>(flag);
+            return new ResponseParam<>(paramDescription, flag, null);
         } catch (NoneOrMultipleTagsFoundException e) {
-            return new ResponseParam<>("false", e.getMessage());
+            String value = "false";
+            if (!emptyString) {
+                value = "";
+            }
+            return new ResponseParam<>(paramDescription, value, e.getMessage());
         } catch (WebServiceFaultException e) {
             String description = String.format("Ошибка: %s", e.getMessage());
-            return new ResponseParam<>(null, description);
+            return new ResponseParam<>(paramDescription, null, description);
         }
     }
 }
