@@ -48,86 +48,67 @@ public class GS81 {
     }
 
     public GS81Response execute() {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Future<?> future = executor.submit(steps);
-        try {
-            future.get(120, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException e) {
-            if (!executor.isTerminated()) {
-                executor.shutdownNow();
-            }
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (TimeoutException e) {
-            if (!executor.isTerminated()) {
-                executor.shutdownNow();
-            }
-            throw new ResponseStatusException(HttpStatus.REQUEST_TIMEOUT, "Timeout exceeded");
+        gs81Response.setTrplName(getTrplName()); //step 1
+        if (runNextStep) {
+            gs81Response.setServiceNameTP(getServiceNameTP()); //step 2
         }
+        if (runNextStep) {
+            gs81Response.setProductId(getProductIdTP()); //step 3
+        }
+        if (runNextStep) {
+            gs81Response.setServiceName(getServiceName()); //step 4
+        }
+        if (!runNextStep) {
+            return gs81Response;
+        }
+
+        ExecutorService executor = Executors.newFixedThreadPool(9);
+        List<Future<?>> futures = new ArrayList<>();
+
+        if (optionalParameterCheck(inputs.getNesovmestimyeUslugiGet())) {
+            futures.add(executor.submit(getIncompatibleServIdList));
+        }
+        if (optionalParameterCheck(inputs.getVkljuchenaVtarifnyjPlanGet())) {
+            futures.add(executor.submit(getVkljuchenaVtarifnyjPlanFlag));
+        }
+        if (optionalParameterCheck(inputs.getVozmozhnostPokazyvatVpodkljuchennykhGet())) {
+            futures.add(executor.submit(getVozmozhnostPokazyvatVpodkljuchennykhFlag));
+        }
+        if (optionalParameterCheck(inputs.getVidimostVdostupnykhGet())) {
+            futures.add(executor.submit(getVidimostVdostupnykhFlag));
+        }
+        String kategoriiUslugiProduktyGet = inputs.getKategoriiUslugiProduktyGet();
+        if (kategoriiUslugiProduktyGet != null) {
+            if (!kategoriiUslugiProduktyGet.equals("n/a")) {
+                futures.add(executor.submit(steps9_11));
+            }
+        }
+        if (optionalParameterCheck(inputs.getUslugaPersolanlizaciiGet())) {
+            futures.add(executor.submit(getUslugaPersonalizaciiFlag));
+        }
+        if (optionalParameterCheck(inputs.getVozmozhnostPodkljuchenijaGet())) {
+            futures.add(executor.submit(getVozmozhnostPodkljuchenijaFlag));
+        }
+        if (optionalParameterCheck(inputs.getVozmozhnostOtkljuchenijaGet())) {
+            futures.add(executor.submit(getVozmozhnostOtkljuchenijaFlag));
+        }
+        if (optionalParameterCheck(inputs.getNazvanieUslugiGet())) {
+            futures.add(executor.submit(getNazvanieUslugiText));
+        }
+
+        for (Future<?> future: futures) {
+            try {
+                future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+                executor.shutdownNow();
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+            }
+        }
+        executor.shutdownNow();
+
         return gs81Response;
     }
-
-    private final Runnable steps = new Thread() {
-        @Override
-        public void run() {
-            gs81Response.setTrplName(getTrplName()); //step 1
-            if (runNextStep) {
-                gs81Response.setServiceNameTP(getServiceNameTP()); //step 2
-            }
-            if (runNextStep) {
-                gs81Response.setProductId(getProductIdTP()); //step 3
-            }
-            if (runNextStep) {
-                gs81Response.setServiceName(getServiceName()); //step 4
-            }
-            if (!runNextStep) {
-                return;
-            }
-
-            ExecutorService executor = Executors.newFixedThreadPool(9);
-            List<Future<?>> futures = new ArrayList<>();
-
-            if (optionalParameterCheck(inputs.getNesovmestimyeUslugiGet())) {
-                futures.add(executor.submit(getIncompatibleServIdList));
-            }
-            if (optionalParameterCheck(inputs.getVkljuchenaVtarifnyjPlanGet())) {
-                futures.add(executor.submit(getVkljuchenaVtarifnyjPlanFlag));
-            }
-            if (optionalParameterCheck(inputs.getVozmozhnostPokazyvatVpodkljuchennykhGet())) {
-                futures.add(executor.submit(getVozmozhnostPokazyvatVpodkljuchennykhFlag));
-            }
-            if (optionalParameterCheck(inputs.getVidimostVdostupnykhGet())) {
-                futures.add(executor.submit(getVidimostVdostupnykhFlag));
-            }
-            String kategoriiUslugiProduktyGet = inputs.getKategoriiUslugiProduktyGet();
-            if (kategoriiUslugiProduktyGet != null) {
-                if (!kategoriiUslugiProduktyGet.equals("n/a")) {
-                    futures.add(executor.submit(steps9_11));
-                }
-            }
-            if (optionalParameterCheck(inputs.getUslugaPersolanlizaciiGet())) {
-                futures.add(executor.submit(getUslugaPersonalizaciiFlag));
-            }
-            if (optionalParameterCheck(inputs.getVozmozhnostPodkljuchenijaGet())) {
-                futures.add(executor.submit(getVozmozhnostPodkljuchenijaFlag));
-            }
-            if (optionalParameterCheck(inputs.getVozmozhnostOtkljuchenijaGet())) {
-                futures.add(executor.submit(getVozmozhnostOtkljuchenijaFlag));
-            }
-            if (optionalParameterCheck(inputs.getNazvanieUslugiGet())) {
-                futures.add(executor.submit(getNazvanieUslugiText));
-            }
-
-            for (Future<?> future: futures) {
-                try {
-                    future.get();
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
-                    executor.shutdownNow();
-                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
-                }
-            }
-        }
-    };
 
     private boolean optionalParameterCheck(Boolean param) {
         return param == null || param; //param is true by default
@@ -418,7 +399,7 @@ public class GS81 {
         }
     };
 
-    //step 4
+    //step 15
     private final Runnable getNazvanieUslugiText = new Thread() {
         @Override
         public void run() {

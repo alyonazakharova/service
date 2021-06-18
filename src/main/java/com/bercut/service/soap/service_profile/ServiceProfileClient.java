@@ -1,7 +1,10 @@
 package com.bercut.service.soap.service_profile;
 
 import com.bercut.service.findservices.ServiceContent;
+import com.bercut.service.soap.SoapClientInterceptor;
 import com.bercut.service.wsdl.service_profile.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -41,6 +44,7 @@ public class ServiceProfileClient extends WebServiceGatewaySupport {
         try {
             JAXBElement<FindServicesResponseParams> response = (JAXBElement<FindServicesResponseParams>) getWebServiceTemplate().marshalSendAndReceive(uri, request);
             return response.getValue();
+//            return (FindServicesResponseParams) getWebServiceTemplate().marshalSendAndReceive(uri, request);
         } catch (WebServiceTransportException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
@@ -66,6 +70,7 @@ public class ServiceProfileClient extends WebServiceGatewaySupport {
         try {
             JAXBElement<ReadServiceResponseParams> response = (JAXBElement<ReadServiceResponseParams>) getWebServiceTemplate().marshalSendAndReceive(uri, request);
             return response.getValue();
+//            return (ReadServiceResponseParams) getWebServiceTemplate().marshalSendAndReceive(uri, request);
         } catch (WebServiceTransportException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }

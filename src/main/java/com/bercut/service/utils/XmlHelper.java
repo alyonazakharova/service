@@ -10,6 +10,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -26,10 +27,20 @@ public class XmlHelper {
 
     private static final Logger log = LoggerFactory.getLogger(XmlHelper.class);
 
+    private static final JAXBContext jaxbContext;
+
+    static {
+        try {
+            jaxbContext = JAXBContext.newInstance(ReadServiceResponseParams.class);
+        } catch (JAXBException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     @SneakyThrows
     public static String getValueByXPath(ReadServiceResponseParams response, String expression, String reserveExpression) {
-        try(StringWriter stringWriter = new StringWriter();) {
-            JAXBContext jaxbContext = JAXBContext.newInstance(ReadServiceResponseParams.class);
+        try(StringWriter stringWriter = new StringWriter()) {
+//            JAXBContext jaxbContext = JAXBContext.newInstance(ReadServiceResponseParams.class);
             Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
             jaxbMarshaller.marshal(response, stringWriter);
             String xml = stringWriter.toString();
@@ -87,8 +98,8 @@ public class XmlHelper {
 
     @SneakyThrows
     private static NodeList getNodes(ReadServiceResponseParams response, String expression) {
-        try(StringWriter stringWriter = new StringWriter();) {
-            JAXBContext jaxbContext = JAXBContext.newInstance(ReadServiceResponseParams.class);
+        try(StringWriter stringWriter = new StringWriter()) {
+//            JAXBContext jaxbContext = JAXBContext.newInstance(ReadServiceResponseParams.class);
             Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
             jaxbMarshaller.marshal(response, stringWriter);
             String xml = stringWriter.toString();

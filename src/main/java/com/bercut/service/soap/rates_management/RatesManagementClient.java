@@ -11,6 +11,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -31,6 +32,16 @@ public class RatesManagementClient extends WebServiceGatewaySupport {
     @Autowired
     private Environment environment;
 
+    private static final JAXBContext jaxbContext;
+
+    static {
+        try {
+            jaxbContext = JAXBContext.newInstance(GetRateProfileRequest.class);
+        } catch (JAXBException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     @SneakyThrows
     public String getRateProfile(String testContur, long branchId, long trplId) {
         GetRateProfileRequest request = new GetRateProfileRequest();
@@ -42,7 +53,8 @@ public class RatesManagementClient extends WebServiceGatewaySupport {
         request.setTargetDate(DatatypeFactory.newInstance().newXMLGregorianCalendar(fdt.format(now)));
 
         Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-        Marshaller marshaller = JAXBContext.newInstance(GetRateProfileRequest.class).createMarshaller();
+//        Marshaller marshaller = JAXBContext.newInstance(GetRateProfileRequest.class).createMarshaller();
+        Marshaller marshaller = jaxbContext.createMarshaller();
         marshaller.marshal(request, document);
         SOAPMessage soapMessage = MessageFactory.newInstance().createMessage();
         soapMessage.getSOAPBody().addDocument(document);

@@ -16,6 +16,18 @@ public class ServiceProfileConfig {
     public Jaxb2Marshaller serviceProfileMarshaller() {
         Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
         marshaller.setContextPath("com.bercut.service.wsdl.service_profile");
+//        String[] packagesToScan = {"com.bercut.service.wsdl.service_profile"};
+//        marshaller.setPackagesToScan(packagesToScan);
+//        marshaller.setClassesToBeBound(
+//                com.bercut.service.wsdl.service_profile.FindServicesRequestParams.class,
+//                com.bercut.service.wsdl.service_profile.ServiceIds.class,
+//                com.bercut.service.wsdl.service_profile.ServiceCriteria.class,
+//                com.bercut.service.wsdl.service_profile.ServiceStatus.class,
+//                com.bercut.service.wsdl.service_profile.ConcreteServiceCriteria.class,
+//                com.bercut.service.wsdl.service_profile.TimeAndTagCriteria.class,
+//                com.bercut.service.wsdl.service_profile.Pagination.class,
+//                com.bercut.service.wsdl.service_profile.ServiceDescription.class
+//        );
         return marshaller;
     }
 
